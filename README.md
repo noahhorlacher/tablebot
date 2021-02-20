@@ -1,3 +1,5 @@
+# ⛔ Work in progress!
+
 # Tablebot Discord Bot
 
 ## Use Case
@@ -15,3 +17,7 @@ Automation of a goodlooking Tournament/Championship chart generation via a disco
    and fill out the required info.
 4. Start: `npm start`
 5. Stay hydrated 💦
+
+# Overwrite defaults
+
+in `defaults.json`, you can overwrite all default settings.

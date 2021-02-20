@@ -1,10 +1,23 @@
 // Import discord.js and create the client
 const Discord = require('discord.js')
 const client = new Discord.Client()
-const mime = require('mime-types')
+const FileType = require('file-type')
+const got = require('got')
+const Papa = require('papaparse')
+const Downloader = require('nodejs-file-downloader')
+const fs = require('fs')
+const fsPromises = require('fs/promises')
+const path = require('path')
+
+const tmppath = path.normalize(__dirname + '/temp')
 
 // Import dotenv for getting the commandtoken
 require('dotenv').config()
+
+if (fs.existsSync(tmppath)) fs.rmdirSync(tmppath, { recursive: true })
+fs.mkdirSync(tmppath)
+
+console.log('Emptied temp folder.')
 
 // Helper functions
 if (!Array.prototype.last) {
@@ -31,26 +44,29 @@ let bot = {
 	}
 }
 
-// return msg file urls or false
-let msgUrls = (s) => {
-	return (
-		s.match(
-			/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/gi
-		) || false
-	)
+// Get file extension based on url
+let urlfileext = async (url) => {
+	return await FileType.fromStream(got.stream(url))
 }
 
-let urlFileType = (s) => {
-	let l = s.split('/').pop()
-	return l == l.split('.') ? undefined : '.' + l.split('.').pop()
+// return msg file urls or false
+let msgUrls = (s) => {
+	return [
+		...s.matchAll(
+			/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/gi
+		)
+	]
 }
 
 // return msg image or false
-let msgImage = (msg) => {
-	console.log('msgurls:', msgUrls(msg.cleanContent))
-	return msgUrls(msg.cleanContent).find((e) =>
-		bot.filetypes.sheet.includes(urlFileType(e))
-	)
+let msgImage = async (msg) => {
+	return await msgUrls(msg.cleanContent).find(async (e) => {
+		e = e[0]
+		let xt = await urlfileext(e)
+		return typeof e == 'string'
+			? bot.filetypes.image.includes('.' + xt.ext)
+			: false
+	})[0]
 }
 // return msg sheet or false
 let msgSheet = (msg) => {
@@ -131,32 +147,86 @@ bot.commands = {
 	},
 	make: {
 		descr: 'Make the image',
-		action: (msg) => {
+		action: async (msg) => {
 			let sheet = msgSheet(msg)
 			if (msg.attachments.size > 0 && sheet) {
 				let cc = msg.cleanContent
+				let mimg = await msgImage(msg)
+
+				let options = {
+					bgc: cc.match(/c=#[0-9a-f]{6}/gi) || false,
+					tc: cc.match(/t=#[0-9a-f]{6}/gi) || false,
+					fc: cc.match(/f=#[0-9a-f]{6}/gi) || false
+				}
+
 				let bg =
-					cc.match(/c=#[0-9a-f]{6}/gi)?.replace('c=#', '') ||
-					msgImage(msg) ||
+					options.bgc[0]?.replace('c=(?=#)', '') ||
+					mimg ||
 					cfg.colors.bg
-				let bgtype =
-					bg == cfg.colors.bg
-						? 'defaultcolor'
-						: ['customcolor', 'image'][msgImage(msg)]
+				let bgtype = options.bgc
+					? 'customcolor'
+					: bg == cfg.colors.bg
+					? 'defaultcolor'
+					: 'image'
 				let tablecolor =
-					cc.match(/t=#[0-9a-f]{6}/gi)?.replace('t=#') ||
-					cfg.colors.table
+					options.tc[0]?.replace('t=(?=#)') || cfg.colors.table
 				let fontcolor =
-					cc.match(/f=#[0-9a-f]{6}/gi)?.replace('f=#') ||
-					cfg.colors.font
-				msg.reply(
-					`Making table image with following params:
-						Background
-							type:			${bgtype},
-							bg:				${bg}
-						Tablecolor:		${tablecolor}
-						Fontcolor:		${fontcolor}`
-				)
+					options.fc[0]?.replace('f=(?=#)') || cfg.colors.font
+
+				/*console.log(
+					`Making table image with following params:\nBackground\n\ttype:\t${bgtype}\n\tbgvalue:\t${bg}\nTablecolor:\t${tablecolor}\nFontcolor:\t${fontcolor}`
+				)*/
+				// Get sheet filetype
+				const downloader = new Downloader({
+					url: sheet.url,
+					directory: tmppath,
+					fileName: sheet.name
+				})
+
+				let sheetext = sheet.name.split('.').pop()
+				try {
+					// Download attachment
+					await downloader.download()
+					switch (sheetext) {
+						case 'csv':
+							Papa.parse(
+								fs.readFileSync(tmppath + '/' + sheet.name),
+								{
+									error: (err, file, inputElem, reason) => {
+										console.log(
+											'Csv parse error',
+											err,
+											file,
+											inputElem,
+											reason
+										)
+									},
+									complete: async (res, file) => {
+										console.log(
+											'sheetobj: ',
+											res.data[0].join('\n'),
+											'res',
+											res,
+											'file',
+											file
+										)
+
+										/*await fsPromises.rm(
+												tmppath + '/' + sheet.name
+											)*/
+									}
+								}
+							)
+							break
+						default:
+							msg.reply(`File type \`${sheetext}\`not supported.`)
+							break
+					}
+					console.log('path: ', tmppath)
+				} catch (e) {
+					console.log('error: ', e)
+					return false
+				}
 			} else {
 				msg.reply('No attachment found!')
 			}

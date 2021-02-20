@@ -3,7 +3,7 @@ const Discord = require('discord.js')
 const client = new Discord.Client()
 const FileType = require('file-type')
 const got = require('got')
-const Papa = require('papaparse')
+const csv = require('csv')
 const Downloader = require('nodejs-file-downloader')
 const fs = require('fs')
 const fsPromises = require('fs/promises')
@@ -60,13 +60,14 @@ let msgUrls = (s) => {
 
 // return msg image or false
 let msgImage = async (msg) => {
-	return await msgUrls(msg.cleanContent).find(async (e) => {
+	let msgurls = await msgUrls(msg.cleanContent).find(async (e) => {
 		e = e[0]
 		let xt = await urlfileext(e)
 		return typeof e == 'string'
 			? bot.filetypes.image.includes('.' + xt.ext)
 			: false
-	})[0]
+	})
+	return msgurls ? msgurls[0] : false
 }
 // return msg sheet or false
 let msgSheet = (msg) => {
@@ -187,34 +188,84 @@ bot.commands = {
 				try {
 					// Download attachment
 					await downloader.download()
+					console.log('downloaded')
 					switch (sheetext) {
 						case 'csv':
-							Papa.parse(
-								fs.readFileSync(tmppath + '/' + sheet.name),
-								{
-									error: (err, file, inputElem, reason) => {
-										console.log(
-											'Csv parse error',
-											err,
-											file,
-											inputElem,
-											reason
-										)
-									},
-									complete: async (res, file) => {
-										console.log(
-											'sheetobj: ',
-											res.data[0].join('\n'),
-											'res',
-											res,
-											'file',
-											file
-										)
+							await csv.parse(
+								await fsPromises.readFile(
+									tmppath + '/' + sheet.name
+								),
+								async (err, _d) => {
+									if (err) throw 'Csv parse error'
 
-										/*await fsPromises.rm(
-												tmppath + '/' + sheet.name
-											)*/
+									await fsPromises.unlink(
+										tmppath + '/' + sheet.name
+									)
+
+									let data = [..._d]
+									let header = data.shift()
+									let body = []
+
+									for (let i in header) {
+										if (!header[i] || header[i] == '')
+											header[i] = '—'
 									}
+
+									console.log(
+										'before: header',
+										header,
+										'data',
+										data
+									)
+
+									for (let x = 0; x < header.length; x++) {
+										let col = []
+										for (let y = 0; y < data.length; y++) {
+											col.push(data[y][x] || '—')
+										}
+										body.push(col.join('\n'))
+									}
+
+									let K = 5 // limit array msg to K rows
+									let arrtruncate = (arr) => {
+										let ln = arr.split('\n').splice(0, 5)
+										ln.push(
+											'... ' +
+												(arr.split('\n').length - K) +
+												' more rows'
+										)
+										return ln
+											.reduce((a, e) => {
+												return [...a, `\`${e}\``]
+											}, [])
+											.join('\n')
+									}
+
+									let fields = []
+									for (let i = 0; i < header.length; i++) {
+										fields.push({
+											name: header[i],
+											value: arrtruncate(body[i]),
+											inline: true
+										})
+									}
+
+									console.log(
+										'after: header',
+										header,
+										'data',
+										fields
+									)
+
+									msg.reply({
+										embed: {
+											color: cfg.msgcolor,
+											title: 'Data',
+											description:
+												'Data read successfully',
+											fields: fields
+										}
+									})
 								}
 							)
 							break

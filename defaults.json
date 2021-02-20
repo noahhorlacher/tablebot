@@ -1,5 +1,7 @@
 {
     "commandtoken": "§tb",
+    "teststring": "Sup dudeman",
+    "defaultexample": "%ctk %t",
     "colors": {
         "msg": "#008080",
         "bg": "#008080",

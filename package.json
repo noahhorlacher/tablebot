@@ -1,0 +1,24 @@
+{
+  "name": "tablebot",
+  "version": "0.0.1",
+  "description": "Discord bot that takes in some table (Google Sheet, Excel file, csv), puts it over a customizable background and returns the result.",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "table",
+    "sheets",
+    "excel",
+    "chart"
+  ],
+  "author": "Noah Horlacher",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^12.5.1",
+    "dotenv": "^8.2.0"
+  }
+}

@@ -1,0 +1,10 @@
+{
+		"commandtoken": "!",
+		"msgcolor": "#0099ff",
+		"defaultbgimage": {
+			"url": "undefined",
+			"proxyUrl": "undefined"
+		},
+		"defaultcolor": "#0099ff",
+		"useproxy": false
+}

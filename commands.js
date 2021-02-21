@@ -122,7 +122,7 @@ const commands = {
 							.setColor('#ff0000')
 							.setTitle(err)
 							.setDescription(img)
-						newmsg.edit(`<@${msg.author.id}>`, newembed)
+						newmsg.edit(`<@${_msg.author.id}>`, newembed)
 						return false
 					} else {
 						console.log('Success')

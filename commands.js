@@ -1,0 +1,119 @@
+const { tabletoimage } = require('./tabletoimage')
+let defs = require('./defaults.json')
+let ctk = defs.commandtoken
+
+const commands = {
+	help: {
+		descr: 'General help',
+		action: (msg) => {
+			msg.reply({
+				embed: {
+					color: defs.msgcolor,
+					title: 'Tablebot Help: General',
+					description: 'Try one of the following commands for help:',
+					fields: [
+						{
+							name: `\`${ctk} usage\``,
+							value: 'Get started'
+						},
+						{
+							name: `\`${ctk} list\``,
+							value: 'List all commands'
+						}
+					]
+				}
+			})
+		}
+	},
+	usage: {
+		descr: 'Get started',
+		action: (msg) => {
+			msg.reply({
+				embed: {
+					color: defs.msgcolor,
+					title: `Tablebot Help: Usage`,
+					description: `Here's how to generate a table image from some sheet file:`,
+					fields: [
+						{
+							name: '1. Type the make command',
+							value: `\`${ctk} make\``
+						},
+						{
+							name:
+								'2. Attach your sheet/table file to the message',
+							value:
+								'Supported file types: `' +
+								defs.filetypes.sheet.join(', ') +
+								'`'
+						},
+						{
+							name:
+								'3. Attach background image (Optional) ' +
+								defs.filetypes.image.join(', ') +
+								' or append background color hexcode to command (Optional)',
+							value: `\`${ctk} make c=${defs.colors.bg}\``
+						},
+						{
+							name: '4. For more styling options:',
+							value: `\`${ctk} list\` under 'make'`
+						}
+					]
+				}
+			})
+		}
+	},
+	list: {
+		descr: 'List all commands',
+		action: (msg) => {
+			msg.reply({
+				embed: {
+					color: defs.msgcolor,
+					title: `Tablebot Help: Command List`,
+					description: `Here's a list of all available commands:`,
+					fields: Object.entries(commands).reduce((a, e) => {
+						return !e[1].hidden
+							? [
+									...a,
+									{
+										name: `\`${(e[1].example
+											? e[1].example
+											: defs.defaultexample
+										)
+											.replace(/(%t)/gi, e[0])
+											.replace(/(%ctk)/, ctk)}\``,
+										value:
+											e[1].descr +
+											(e[1].options
+												? '\nOptions: ' + e[1].options
+												: ''),
+										inline: true
+									}
+							  ]
+							: a
+					}, [])
+				}
+			})
+		}
+	},
+	make: {
+		descr:
+			'Make the image\n\nArg examples:\nbackground color (hex): `c=#00ff44`\n\ntable background color (hex+alpha): `tbc=#00000088`\n\nfont color (hex+alpha): `fc=#ffffffee`\n\nborder color (hex+alpha): `bc=#ffffffbb`\n\nborder width (pixels): `bw=1`\n\nsplit table (number of rows): `spl=10`',
+		action: async (msg) => tabletoimage(msg)
+	},
+	uptime: {
+		descr: 'Check bot uptime',
+		action: (msg) => {
+			msg.reply(`Dude man I'm up since like ${msToTime(client.uptime)}.`)
+		}
+	},
+	yo: {
+		descr: 'Simple I/O testing command.',
+		action: (msg) => {
+			msg.reply(defs.teststring)
+		}
+	}
+}
+
+module.exports = {
+	commands: commands
+}

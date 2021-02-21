@@ -1,12 +1,22 @@
 {
     "commandtoken": "§tb",
+    "cssencoding": "utf-8",
     "teststring": "Sup dudeman",
     "defaultexample": "%ctk %t",
+    "style": {
+        "logo": null,
+        "bgcolor": "#008080",
+        "tablecolor": "#00000088",
+        "fontcolor": "#ffffffee",
+        "headerfontcolor": "#ffffffee",
+        "headerbgcolor": "#79000088",
+        "bordercolor": "#ffffffbb",
+        "borderwidth": 1,
+        "splitevery": 20
+    },
     "colors": {
         "msg": "#008080",
-        "bg": "#008080",
-        "table": "#ffffff",
-        "font": "#ffffff"
+        "bg": "#00808088"
     },
     "filetypes": {
 		"sheet": [".csv"],

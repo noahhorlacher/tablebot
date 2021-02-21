@@ -2,6 +2,7 @@ const fs = require('fs')
 const FileType = require('file-type')
 const got = require('got')
 const defs = require('./defaults.json')
+const path = require('path')
 
 // Helper functions
 if (!Array.prototype.last) {
@@ -21,7 +22,9 @@ let ms_to_time = (s) => {
 	return `\`${hrs}h ${mins}m ${secs}s\``
 }
 
-let cleantemp = (tmppath) => {
+const tmppath = path.normalize(__dirname + '/temp') // path for downloaded files
+
+let cleantemp = () => {
 	if (fs.existsSync(tmppath)) fs.rmdirSync(tmppath, { recursive: true })
 	fs.mkdirSync(tmppath)
 	console.log('Emptied temp folder.')
@@ -63,5 +66,6 @@ module.exports = {
 	ms_to_time: ms_to_time,
 	cleantemp: cleantemp,
 	msgimage: msgimage,
-	msgsheet: msgsheet
+	msgsheet: msgsheet,
+	tmppath: tmppath
 }

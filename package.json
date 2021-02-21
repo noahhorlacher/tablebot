@@ -4,8 +4,8 @@
   "description": "Discord bot that takes in some table (Google Sheet, Excel file, csv), puts it over a customizable background and returns the result.",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node .",
+    "test": "nodemon index.js"
   },
   "keywords": [
     "discord",
@@ -25,7 +25,11 @@
     "got": "^11.8.1",
     "node-html-to-image": "^3.1.0",
     "nodejs-file-downloader": "^4.2.0",
-    "pug": "^3.0.0",
-    "nodemon": "2.0.7"
+    "nodemon": "^2.0.7",
+    "pug": "^3.0.0"
+  },
+  "engines": {
+    "node": "v14.11.0",
+    "npm": "6.x"
   }
 }

@@ -4,7 +4,7 @@
   "description": "Discord bot that takes in some table (Google Sheet, Excel file, csv), puts it over a customizable background and returns the result.",
   "main": "index.js",
   "scripts": {
-    "start": "node .",
+    "start": "node index.js",
     "test": "nodemon index.js"
   },
   "keywords": [

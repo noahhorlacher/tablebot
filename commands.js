@@ -112,7 +112,15 @@ const commands = {
 				.send(`<@${_msg.author.id}>`, newembed)
 				.then(async (newmsg) => {
 					console.log('Generating')
-					let res = await tabletoimage(_msg)
+					let res = await tabletoimage(_msg).catch((e) => {
+						console.log('Failed')
+						newembed
+							.setColor('#ff0000')
+							.setTitle(err)
+							.setDescription(img)
+						newmsg.edit(`<@${_msg.author.id}>`, newembed)
+						return false
+					})
 					let err, img, fname
 					;[err, img, fname] = [...res]
 

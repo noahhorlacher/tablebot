@@ -17,6 +17,8 @@ body {
 	background-position: center;
 	background-size: cover;
 	background-repeat: no-repeat;
+	display: grid;
+	place-items: center;
 }
 
 main {
@@ -26,8 +28,13 @@ main {
 	padding-bottom: 64px;
 }
 
+h1 {
+	font-size: 48px;
+	color: var(--tic);
+}
+
 img {
-	width: 80%;
+	width: 50%;
 	margin: 0 auto;
 }
 

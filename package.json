@@ -19,8 +19,10 @@
   "license": "ISC",
   "dependencies": {
     "csv": "^5.3.2",
+    "datauri": "^3.0.0",
     "discord.js": "^12.5.1",
     "dotenv": "^8.2.0",
+    "excelcsv": "^0.1.2",
     "file-type": "^16.2.0",
     "got": "^11.8.1",
     "node-html-to-image": "^3.1.0",

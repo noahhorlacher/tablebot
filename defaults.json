@@ -4,8 +4,12 @@
     "teststring": "Sup dudeman",
     "defaultexample": "%ctk %t",
     "style": {
-        "logo": "./logo.png",
-        "bgimage":"./background.jpg",
+        "defaulttitle": false,
+        "titlecolor": "#220000EE",
+        "quality": 30,
+        "transparent": false,
+        "logo": "./defaultbranding/logo.png",
+        "bgimage":"./defaultbranding/background.jpg",
         "bgcolor": "#008080",
         "tablecolor": "#00000088",
         "fontcolor": "#ffffffee",
@@ -20,7 +24,7 @@
         "bg": "#00808088"
     },
     "filetypes": {
-		"sheet": [".csv"],
+		"sheet": [".csv", ".xlsx"],
 		"image": [".png", ".jpg", ".jpeg"]
 	}
 }

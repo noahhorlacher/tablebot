@@ -109,7 +109,7 @@ const commands = {
 				.setDescription('This can take a few seconds')
 				.setColor(defs.colors.msg)
 			_msg.channel
-				.send(`<@${_msg.author.id}>`, newembed)
+				.send(`I'll @ you when I'm done.`, newembed)
 				.then(async (newmsg) => {
 					console.log('Generating')
 					let res = await tabletoimage(_msg).catch((e) => {
@@ -118,7 +118,7 @@ const commands = {
 							.setColor('#ff0000')
 							.setTitle(err)
 							.setDescription(img)
-						newmsg.edit(`<@${_msg.author.id}>`, newembed)
+						newmsg.edit(`<@${_msg.author.id}> I'm sorry.`, newembed)
 						return false
 					})
 					let err, img, fname
@@ -130,7 +130,7 @@ const commands = {
 							.setColor('#ff0000')
 							.setTitle(err)
 							.setDescription(img)
-						newmsg.edit(`<@${_msg.author.id}>`, newembed)
+						newmsg.edit(`<@${_msg.author.id}> I'm sorry`, newembed)
 						return false
 					} else {
 						console.log('Success')
@@ -140,10 +140,7 @@ const commands = {
 						)
 
 						_msg.channel
-							.send(
-								`<@${_msg.author.id}> Here's your image`,
-								resultattachment
-							)
+							.send(resultattachment)
 							.then((___msg) => {
 								newembed
 									.setColor('#00ff00')

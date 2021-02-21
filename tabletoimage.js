@@ -4,10 +4,17 @@ const fsPromises = require('fs/promises')
 const { msgsheet, tmppath } = require('./helpers')
 const defs = require('./defaults.json')
 const pug = require('pug')
-const { MessageAttachment } = require('discord.js')
 const nodeHtmlToImage = require('node-html-to-image')
+const datauri = require('datauri')
+const ExcelCSV = require('excelcsv')
 
 let tabletohtml = async (data, options) => {
+	if (options.bg == defs.style.bgimage) {
+		options.bg = await datauri(options.bg)
+	}
+	if (options.logo == defs.style.logo)
+		options.logo = await datauri(options.logo)
+
 	let usrvars = await fsPromises.readFile('./default.css', {
 		encoding: defs.cssencoding
 	})
@@ -18,7 +25,9 @@ let tabletohtml = async (data, options) => {
 	)
 		.replace(
 			'%bg',
-			options.bgtype == 'image' ? `url(${options.bg})` : options.bg
+			options.bgtype == 'image'
+				? `url(${options.bg.replace(/\\\\/gi, '/')})`
+				: options.bg
 		)
 		.replace('%tc', options.tablecolor)
 		.replace('%fc', options.fontcolor)
@@ -26,6 +35,7 @@ let tabletohtml = async (data, options) => {
 		.replace('%hbc', options.headerbgcolor)
 		.replace('%bc', options.bordercolor)
 		.replace('%bw', options.borderwidth)
+		.replace('%tic', options.titlecolor)
 
 	let thead = data.shift()
 	let tdata = []
@@ -42,13 +52,32 @@ let tabletohtml = async (data, options) => {
 		tdata = [data]
 	}
 
-	return pug.renderFile('./template.pug', {
+	let dateobj = new Date(Date.now())
+	let datestr = `${dateobj.getDate()}.${
+		dateobj.getMonth() + 1
+	}.${dateobj.getFullYear()}`
+
+	options.logo = options.logo ? options.logo.replace(/\\\\/gi, '/') : false
+	options.title = options.title
+		? options.title.replace('%date', datestr)
+		: false
+
+	let html = pug.renderFile('./template.pug', {
 		theader: thead,
 		tdata: tdata,
 		usrvars: usrvars,
 		defstyle: defstyle,
-		logo: options.logo
+		logo: options.logo,
+		title: options.title
 	})
+
+	options.bg = null
+	options.logo = null
+	console.log('options: ', options)
+
+	await fsPromises.writeFile('./pugout.html', html)
+
+	return html
 }
 
 let tabletoimage = async (msg) => {
@@ -82,15 +111,21 @@ let tabletoimage = async (msg) => {
 		hfc: cc.match(/hfc=#[0-9a-f]{8}/gi) || false, // header font color
 		hbc: cc.match(/hbc=#[0-9a-f]{8}/gi) || false, // header background color
 		bw: cc.match(/bw=\d+/gi) || false, // border width
-		spl: cc.match(/spl=\d+/gi) || false
+		spl: cc.match(/spl=\d+/gi) || false, // split datarows into multiple tables
+		ti: cc.match(/ti='.*?'/gi) || false, // title
+		tic: cc.match(/tic=#[0-9a-f]{8}/gi) || false // title color
 	}
 
 	let bg =
 		args.bgi[0]?.replace(/bgi=/i, '') ||
 		args.bgc[0]?.replace(/c=/i, '') ||
-		defs.style.bgimage ||
-		defs.style.bgcolor
-	let logo = args.logo[0]?.replace(/logo=/i, '') || defs.style.logo || false
+		defs.style.bgimage == ''
+			? false
+			: defs.style.bgimage || defs.style.bgcolor
+	let logo =
+		args.logo[0]?.replace(/logo=/i, '') || defs.style.logo == ''
+			? false
+			: defs.style.logo || false
 	let bgtype = args.bgc ? 'color' : bg == defs.colors.bg ? 'color' : 'image'
 	let tablecolor = args.tbc[0]?.replace(/tbc=/i, '') || defs.style.tablecolor
 	let fontcolor = args.fc[0]?.replace(/fc=/i, '') || defs.style.fontcolor
@@ -104,6 +139,10 @@ let tabletoimage = async (msg) => {
 		'px'
 	let splitevery =
 		parseInt(args.bw[0]?.replace(/spl=/i, '')) || defs.style.splitevery // -1 = don't split
+	let title =
+		args.ti[0]?.replace(/ti='/i, '').replace(/'$/i, '') ||
+		defs.style.defaulttitle
+	let titlecolor = args.tic[0]?.replace(/tic=/i, '') || defs.style.titlecolor
 
 	let sheetext = sheet.name.split('.').pop() // Sheet file extension
 
@@ -121,6 +160,24 @@ let tabletoimage = async (msg) => {
 
 		// Parse sheet
 		switch (sheetext) {
+			case 'xlsx':
+				let parser = new ExcelCSV(tmppath + '/' + sheet.name)
+				let csvstring = parser
+					.row(function (row, sheetname) {
+						console.log(row)
+						// Transform data here or return false to skip the row.
+						return row.some((e) => {
+							return e && e != '' && e.length > 0
+						})
+							? row
+							: false
+					})
+					.init()
+				await csv.parse(csvstring, async (err, _d) => {
+					if (err)
+						return ['Error: Failed to parse xlsx file', err.message]
+					tabledata = [..._d]
+				})
 			case 'csv':
 				await csv.parse(
 					await fsPromises.readFile(tmppath + '/' + sheet.name),
@@ -168,7 +225,9 @@ let tabletoimage = async (msg) => {
 				fontcolor: fontcolor,
 				bordercolor: bordercolor,
 				borderwidth: borderwidth,
-				splitevery: splitevery
+				splitevery: splitevery,
+				title: title,
+				titlecolor: titlecolor
 			})
 		} catch (e) {
 			return [`Error: Couldn't convert table to html`, e]
@@ -179,9 +238,9 @@ let tabletoimage = async (msg) => {
 		try {
 			finalimg = await nodeHtmlToImage({
 				html: html,
-				quality: 80,
+				quality: defs.style.quality,
+				transparent: defs.style.transparent,
 				type: 'png',
-				transparent: true,
 				encoding: 'binary'
 			})
 		} catch (e) {

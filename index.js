@@ -3,7 +3,7 @@ const client = new Discord.Client()
 const { cleantemp } = require('./helpers')
 const { commands } = require('./commands')
 
-require('dotenv').config() // get token etc.
+require('dotenv').config() // get .env config (for token etc.)
 cleantemp() // empty temp dir
 
 // Set bot defaults
@@ -26,12 +26,15 @@ client.on('message', async (msg) => {
 		token.includes(e[0].toString())
 	)
 	if (cur_command && cur_command[1].action) {
-		cur_command[1].action(msg)
+		await cur_command[1].action(msg)
 		return true
 	}
 
 	// No matching command
-	msg.reply(`You need something? try \`${ctk} help\``)
+	await msg.channel.send(
+		`<@${msg.author.id}> You need something? try \`${ctk} help\``
+	)
+	return true
 })
 
 // Login

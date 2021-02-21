@@ -9,7 +9,8 @@ html(lang="en")
         style=defstyle
     body
         main
-            img(src="./logo.png")
+            if logo
+                img(src=logo)
             for t in tdata
                 table
                     thead 

@@ -1,5 +1,5 @@
 {
-    "commandtoken": "§tb",
+    "commandtoken": "!tb",
     "cssencoding": "utf-8",
     "teststring": "Sup dudeman",
     "defaultexample": "%ctk %t",
@@ -12,7 +12,7 @@
         "headerbgcolor": "#79000088",
         "bordercolor": "#ffffffbb",
         "borderwidth": 1,
-        "splitevery": 20
+        "splitevery": -1
     },
     "colors": {
         "msg": "#008080",

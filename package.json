@@ -23,6 +23,7 @@
     "dotenv": "^8.2.0",
     "file-type": "^16.2.0",
     "got": "^11.8.1",
+    "node-html-to-image": "^3.1.0",
     "nodejs-file-downloader": "^4.2.0",
     "pug": "^3.0.0"
   }

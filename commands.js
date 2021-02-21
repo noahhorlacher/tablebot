@@ -1,12 +1,13 @@
 const { tabletoimage } = require('./tabletoimage')
 let defs = require('./defaults.json')
+const Discord = require('discord.js')
 let ctk = defs.commandtoken
 
 const commands = {
 	help: {
 		descr: 'General help',
-		action: (msg) => {
-			msg.reply({
+		action: async (msg) => {
+			await msg.channel.send({
 				embed: {
 					color: defs.msgcolor,
 					title: 'Tablebot Help: General',
@@ -27,8 +28,8 @@ const commands = {
 	},
 	usage: {
 		descr: 'Get started',
-		action: (msg) => {
-			msg.reply({
+		action: async (msg) => {
+			await msg.channel.send({
 				embed: {
 					color: defs.msgcolor,
 					title: `Tablebot Help: Usage`,
@@ -64,8 +65,8 @@ const commands = {
 	},
 	list: {
 		descr: 'List all commands',
-		action: (msg) => {
-			msg.reply({
+		action: async (msg) => {
+			await msg.channel.send({
 				embed: {
 					color: defs.msgcolor,
 					title: `Tablebot Help: Command List`,
@@ -98,18 +99,75 @@ const commands = {
 	make: {
 		descr:
 			'Make the image\n\nArg examples:\nbackground color (hex): `c=#00ff44`\n\ntable background color (hex+alpha): `tbc=#00000088`\n\nfont color (hex+alpha): `fc=#ffffffee`\n\nborder color (hex+alpha): `bc=#ffffffbb`\n\nborder width (pixels): `bw=1`\n\nsplit table (number of rows): `spl=10`',
-		action: async (msg) => tabletoimage(msg)
+		action: async (_msg) => {
+			/**
+			 * @type {Discord.Message}
+			 */
+
+			let newembed = new Discord.MessageEmbed()
+				.setTitle(`Generating your image...`)
+				.setDescription('This can take a few seconds')
+				.setColor(defs.colors.msg)
+			_msg.channel
+				.send(`<@${_msg.author.id}>`, newembed)
+				.then(async (newmsg) => {
+					console.log('Generating')
+					let res = await tabletoimage(_msg)
+					let err, img, fname
+					;[err, img, fname] = [...res]
+
+					if (err) {
+						console.log('Failed')
+						newembed
+							.setColor('#ff0000')
+							.setTitle(err)
+							.setDescription(img)
+						newmsg.edit(`<@${msg.author.id}>`, newembed)
+						return false
+					} else {
+						console.log('Success')
+						let resultattachment = new Discord.MessageAttachment(
+							img,
+							fname
+						)
+
+						_msg.channel
+							.send(
+								`<@${_msg.author.id}> Here's your image`,
+								resultattachment
+							)
+							.then((___msg) => {
+								newembed
+									.setColor('#00ff00')
+									.setTitle('✅ Generated Image')
+									.setDescription(`Here's your image`)
+								newmsg.edit(`<@${_msg.author.id}>`, newembed)
+							})
+							.catch((e) => {
+								console.log('couldnt send msg: ', e)
+							})
+							.finally(() => {
+								return true
+							})
+					}
+				})
+				.catch((e) => {
+					console.log('couldnt send msg: ', e)
+				})
+		}
 	},
 	uptime: {
 		descr: 'Check bot uptime',
-		action: (msg) => {
-			msg.reply(`Dude man I'm up since like ${msToTime(client.uptime)}.`)
+		action: async (msg) => {
+			await msg.channel.send(
+				`Dude man I'm up since like ${msToTime(client.uptime)}.`
+			)
 		}
 	},
 	yo: {
 		descr: 'Simple I/O testing command.',
-		action: (msg) => {
-			msg.reply(defs.teststring)
+		action: async (msg) => {
+			await msg.channel.send(defs.teststring)
 		}
 	}
 }

@@ -35,15 +35,6 @@ let urlfileext = async (url) => {
 	return await FileType.fromStream(got.stream(url))
 }
 
-// return msg file urls or false
-let msgurls = (url) => {
-	return [
-		...url.matchAll(
-			/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/gi
-		)
-	]
-}
-
 // return msg image or false
 let msgimage = async (msg) => {
 	let urls = await msgurls(msg.cleanContent).find(async (e) => {
@@ -57,8 +48,10 @@ let msgimage = async (msg) => {
 }
 // return msg sheet or false
 let msgsheet = (msg) => {
-	return msg.attachments.find((e) =>
-		defs.filetypes.sheet.includes('.' + e.name.split('.').last())
+	return (
+		msg.attachments.find((e) =>
+			defs.filetypes.sheet.includes('.' + e.name.split('.').last())
+		) || false
 	)
 }
 

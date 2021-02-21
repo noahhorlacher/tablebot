@@ -8,8 +8,6 @@ const { MessageAttachment } = require('discord.js')
 const nodeHtmlToImage = require('node-html-to-image')
 
 let tabletohtml = async (data, options) => {
-	console.log('opts: ', options)
-
 	let usrvars = await fsPromises.readFile('./default.css', {
 		encoding: defs.cssencoding
 	})

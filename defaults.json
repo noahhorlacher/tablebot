@@ -4,7 +4,8 @@
     "teststring": "Sup dudeman",
     "defaultexample": "%ctk %t",
     "style": {
-        "logo": null,
+        "logo": "./logo.png",
+        "bgimage":"./background.jpg",
         "bgcolor": "#008080",
         "tablecolor": "#00000088",
         "fontcolor": "#ffffffee",

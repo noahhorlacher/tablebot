@@ -1,92 +1,26 @@
-// Import discord.js and create the client
 const Discord = require('discord.js')
 const client = new Discord.Client()
-const FileType = require('file-type')
-const got = require('got')
 const csv = require('csv')
 const Downloader = require('nodejs-file-downloader')
-const fs = require('fs')
 const fsPromises = require('fs/promises')
 const path = require('path')
+const { msToTime, cleantemp, msgsheet, msgimage } = require('./helpers')
+require('dotenv').config() // get token etc.
 
-const tmppath = path.normalize(__dirname + '/temp')
-
-// Import dotenv for getting the commandtoken
-require('dotenv').config()
-
-if (fs.existsSync(tmppath)) fs.rmdirSync(tmppath, { recursive: true })
-fs.mkdirSync(tmppath)
-
-console.log('Emptied temp folder.')
-
-// Helper functions
-if (!Array.prototype.last) {
-	Array.prototype.last = function () {
-		return this[this.length - 1]
-	}
-}
-function msToTime(s) {
-	var ms = s % 1000
-	s = (s - ms) / 1000
-	var secs = s % 60
-	s = (s - secs) / 60
-	var mins = s % 60
-	var hrs = (s - mins) / 60
-
-	return `\`${hrs}h ${mins}m ${secs}s\``
-}
-
-// Define bot filetypes
-let bot = {
-	filetypes: {
-		sheet: ['.xlsx', '.xls', '.otd', '.csv'],
-		image: ['.png', '.jpg', '.jpeg']
-	}
-}
-
-// Get file extension based on url
-let urlfileext = async (url) => {
-	return await FileType.fromStream(got.stream(url))
-}
-
-// return msg file urls or false
-let msgUrls = (s) => {
-	return [
-		...s.matchAll(
-			/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/gi
-		)
-	]
-}
-
-// return msg image or false
-let msgImage = async (msg) => {
-	let msgurls = await msgUrls(msg.cleanContent).find(async (e) => {
-		e = e[0]
-		let xt = await urlfileext(e)
-		return typeof e == 'string'
-			? bot.filetypes.image.includes('.' + xt.ext)
-			: false
-	})
-	return msgurls ? msgurls[0] : false
-}
-// return msg sheet or false
-let msgSheet = (msg) => {
-	return msg.attachments.find((e) =>
-		bot.filetypes.sheet.includes('.' + e.name.split('.').last())
-	)
-}
+const tmppath = path.normalize(__dirname + '/temp') // path for downloaded files
+cleantemp(tmppath) // empty temp dir
 
 // Set bot defaults
-let cfg = (bot.defaults = require('./defaults.json'))
-let ctk = cfg.commandtoken
+let defs = require('./defaults.json')
+let ctk = defs.commandtoken
 
-bot.commands = {
+const commands = {
 	help: {
 		descr: 'General help',
 		action: (msg) => {
 			msg.reply({
 				embed: {
-					color: cfg.msgcolor,
+					color: defs.msgcolor,
 					title: 'Tablebot Help: General',
 					description: 'Try one of the following commands for help:',
 					fields: [
@@ -108,7 +42,7 @@ bot.commands = {
 		action: (msg) => {
 			msg.reply({
 				embed: {
-					color: cfg.msgcolor,
+					color: defs.msgcolor,
 					title: `Tablebot Help: Usage`,
 					description: `Here's how to generate a table image from some sheet file:`,
 					fields: [
@@ -121,19 +55,19 @@ bot.commands = {
 								'2. Attach your sheet/table file to the message',
 							value:
 								'Supported file types: `' +
-								bot.filetypes.sheet.join(', ') +
+								defs.filetypes.sheet.join(', ') +
 								'`'
 						},
 						{
 							name:
 								'3. Attach background image ' +
-								bot.filetypes.image.join(', ') +
+								defs.filetypes.image.join(', ') +
 								' or append background color hexcode to command',
-							value: `\`${ctk} make c=${cfg.colors.bg}\``
+							value: `\`${ctk} make c=${defs.colors.bg}\``
 						},
 						{
 							name: '4. Optionally, also set table & font color',
-							value: `\`${ctk} make c=${cfg.colors.bg} t=${cfg.colors.table} f=${cfg.colors.font}\``
+							value: `\`${ctk} make c=${defs.colors.bg} t=${defs.colors.table} f=${defs.colors.font}\``
 						}
 					]
 				}
@@ -143,143 +77,150 @@ bot.commands = {
 	list: {
 		descr: 'List all commands',
 		action: (msg) => {
-			msg.reply({ embed: bot.helptable })
+			msg.reply({ embed: helptable })
 		}
 	},
 	make: {
 		descr: 'Make the image',
 		action: async (msg) => {
-			let sheet = msgSheet(msg)
-			if (msg.attachments.size > 0 && sheet) {
-				let cc = msg.cleanContent
-				let mimg = await msgImage(msg)
+			if (msg.attachments <= 0) {
+				msg.reply('No attachment found!')
+				return
+			}
 
-				let options = {
-					bgc: cc.match(/c=#[0-9a-f]{6}/gi) || false,
-					tc: cc.match(/t=#[0-9a-f]{6}/gi) || false,
-					fc: cc.match(/f=#[0-9a-f]{6}/gi) || false
-				}
+			let sheet = msgsheet(msg)
+			if (!sheet) {
+				msg.reply(
+					'No valid sheet found. Supported sheets are:\n`' +
+						defs.filetypes.sheet.join(',') +
+						'`'
+				)
+				return
+			}
 
-				let bg =
-					options.bgc[0]?.replace('c=(?=#)', '') ||
-					mimg ||
-					cfg.colors.bg
-				let bgtype = options.bgc
-					? 'customcolor'
-					: bg == cfg.colors.bg
-					? 'defaultcolor'
-					: 'image'
-				let tablecolor =
-					options.tc[0]?.replace('t=(?=#)') || cfg.colors.table
-				let fontcolor =
-					options.fc[0]?.replace('f=(?=#)') || cfg.colors.font
+			let cc = msg.cleanContent
+			let mimg = await msgimage(msg)
 
-				/*console.log(
-					`Making table image with following params:\nBackground\n\ttype:\t${bgtype}\n\tbgvalue:\t${bg}\nTablecolor:\t${tablecolor}\nFontcolor:\t${fontcolor}`
-				)*/
-				// Get sheet filetype
-				const downloader = new Downloader({
-					url: sheet.url,
-					directory: tmppath,
-					fileName: sheet.name
-				})
+			// Parse args
+			let args = {
+				bgc: cc.match(/c=#[0-9a-f]{6}/gi) || false,
+				tc: cc.match(/t=#[0-9a-f]{6}/gi) || false,
+				fc: cc.match(/f=#[0-9a-f]{6}/gi) || false
+			}
 
-				let sheetext = sheet.name.split('.').pop()
-				try {
-					// Download attachment
-					await downloader.download()
-					console.log('downloaded')
-					switch (sheetext) {
-						case 'csv':
-							await csv.parse(
-								await fsPromises.readFile(
+			let bg =
+				args.bgc[0]?.replace('c=(?=#)', '') || mimg || defs.colors.bg
+			let bgtype = args.bgc
+				? 'customcolor'
+				: bg == defs.colors.bg
+				? 'defaultcolor'
+				: 'image'
+			let tablecolor = args.tc[0]?.replace('t=(?=#)') || defs.colors.table
+			let fontcolor = args.fc[0]?.replace('f=(?=#)') || defs.colors.font
+
+			console.log(
+				`Making table image with following params:\nBackground\n\ttype:\t${bgtype}\n\tbgvalue:\t${bg}\nTablecolor:\t${tablecolor}\nFontcolor:\t${fontcolor}`
+			)
+
+			let sheetext = sheet.name.split('.').pop() // Sheet file extension
+
+			// Initialize Downloader
+			const downloader = new Downloader({
+				url: sheet.url,
+				directory: tmppath,
+				fileName: sheet.name
+			})
+			try {
+				// Download attachment
+				await downloader.download()
+
+				// Parse sheet
+				switch (sheetext) {
+					case 'csv':
+						await csv.parse(
+							await fsPromises.readFile(
+								tmppath + '/' + sheet.name
+							),
+							async (err, _d) => {
+								if (err) throw 'Csv parse error'
+
+								await fsPromises.unlink(
 									tmppath + '/' + sheet.name
-								),
-								async (err, _d) => {
-									if (err) throw 'Csv parse error'
+								)
 
-									await fsPromises.unlink(
-										tmppath + '/' + sheet.name
+								let data = [..._d]
+								let header = data.shift()
+								let body = []
+
+								for (let i in header) {
+									if (!header[i] || header[i] == '')
+										header[i] = '—'
+								}
+
+								console.log(
+									'before: header',
+									header,
+									'data',
+									data
+								)
+
+								for (let x = 0; x < header.length; x++) {
+									let col = []
+									for (let y = 0; y < data.length; y++) {
+										col.push(data[y][x] || '—')
+									}
+									body.push(col.join('\n'))
+								}
+
+								let K = 5 // limit array msg to K rows
+								let arrtruncate = (arr) => {
+									let ln = arr.split('\n').splice(0, 5)
+									ln.push(
+										'... ' +
+											(arr.split('\n').length - K) +
+											' more rows'
 									)
+									return ln
+										.reduce((a, e) => {
+											return [...a, `\`${e}\``]
+										}, [])
+										.join('\n')
+								}
 
-									let data = [..._d]
-									let header = data.shift()
-									let body = []
-
-									for (let i in header) {
-										if (!header[i] || header[i] == '')
-											header[i] = '—'
-									}
-
-									console.log(
-										'before: header',
-										header,
-										'data',
-										data
-									)
-
-									for (let x = 0; x < header.length; x++) {
-										let col = []
-										for (let y = 0; y < data.length; y++) {
-											col.push(data[y][x] || '—')
-										}
-										body.push(col.join('\n'))
-									}
-
-									let K = 5 // limit array msg to K rows
-									let arrtruncate = (arr) => {
-										let ln = arr.split('\n').splice(0, 5)
-										ln.push(
-											'... ' +
-												(arr.split('\n').length - K) +
-												' more rows'
-										)
-										return ln
-											.reduce((a, e) => {
-												return [...a, `\`${e}\``]
-											}, [])
-											.join('\n')
-									}
-
-									let fields = []
-									for (let i = 0; i < header.length; i++) {
-										fields.push({
-											name: header[i],
-											value: arrtruncate(body[i]),
-											inline: true
-										})
-									}
-
-									console.log(
-										'after: header',
-										header,
-										'data',
-										fields
-									)
-
-									msg.reply({
-										embed: {
-											color: cfg.msgcolor,
-											title: 'Data',
-											description:
-												'Data read successfully',
-											fields: fields
-										}
+								let fields = []
+								for (let i = 0; i < header.length; i++) {
+									fields.push({
+										name: header[i],
+										value: arrtruncate(body[i]),
+										inline: true
 									})
 								}
-							)
-							break
-						default:
-							msg.reply(`File type \`${sheetext}\`not supported.`)
-							break
-					}
-					console.log('path: ', tmppath)
-				} catch (e) {
-					console.log('error: ', e)
-					return false
+
+								console.log(
+									'after: header',
+									header,
+									'data',
+									fields
+								)
+
+								msg.reply({
+									embed: {
+										color: defs.msgcolor,
+										title: 'Data',
+										description: 'Data read successfully',
+										fields: fields
+									}
+								})
+							}
+						)
+						break
+					default:
+						msg.reply(`File type \`${sheetext}\`not supported.`)
+						break
 				}
-			} else {
-				msg.reply('No attachment found!')
+			} catch (e) {
+				console.log('error: ', e)
+				return
 			}
 		}
 	},
@@ -292,23 +233,22 @@ bot.commands = {
 	yo: {
 		descr: 'Simple I/O testing command.',
 		action: (msg) => {
-			msg.reply(cfg.teststring)
+			msg.reply(defs.teststring)
 		}
 	}
 }
-
-bot.helptable = {
-	color: cfg.msgcolor,
+const helptable = {
+	color: defs.msgcolor,
 	title: `Tablebot Help: Command List`,
 	description: `Here's a list of all available commands:`,
-	fields: Object.entries(bot.commands).reduce((a, e) => {
+	fields: Object.entries(commands).reduce((a, e) => {
 		return !e[1].hidden
 			? [
 					...a,
 					{
 						name: `\`${(e[1].example
 							? e[1].example
-							: cfg.defaultexample
+							: defs.defaultexample
 						)
 							.replace(/(%t)/gi, e[0])
 							.replace(/(%ctk)/, ctk)}\``,
@@ -324,7 +264,7 @@ bot.helptable = {
 
 // Register an event so that when the bot is ready, it will log a messsage to the terminal
 client.on('ready', () => {
-	console.log(`Logged in as ${client.user.tag}!`)
+	console.log(`Logged in as ${client.user.tag}.`)
 })
 
 // Handle message
@@ -334,7 +274,7 @@ client.on('message', async (msg) => {
 
 	// Check if command and execute if true
 	let token = msg.cleanContent.replace(new RegExp(`(.*)?${ctk}`, 'gi'), '')
-	let cur_command = Object.entries(bot.commands).find((e) =>
+	let cur_command = Object.entries(commands).find((e) =>
 		token.includes(e[0].toString())
 	)
 	if (cur_command && cur_command[1].action) {

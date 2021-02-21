@@ -38,4 +38,4 @@ client.on('message', async (msg) => {
 })
 
 // Login
-client.login(process.env.BOTTOKEN)
+client.login(process.env.BOT_TOKEN)

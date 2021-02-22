@@ -62,7 +62,7 @@ let tabletohtml = async (data, options) => {
 		? options.title.replace('%date', datestr)
 		: false
 
-	let html = pug.renderFile('./template.pug', {
+	return pug.renderFile('./template.pug', {
 		theader: thead,
 		tdata: tdata,
 		usrvars: usrvars,
@@ -70,14 +70,6 @@ let tabletohtml = async (data, options) => {
 		logo: options.logo,
 		title: options.title
 	})
-
-	options.bg = null
-	options.logo = null
-	console.log('options: ', options)
-
-	await fsPromises.writeFile('./pugout.html', html)
-
-	return html
 }
 
 let tabletoimage = async (msg) => {
@@ -164,8 +156,6 @@ let tabletoimage = async (msg) => {
 				let parser = new ExcelCSV(tmppath + '/' + sheet.name)
 				let csvstring = parser
 					.row(function (row, sheetname) {
-						console.log(row)
-						// Transform data here or return false to skip the row.
 						return row.some((e) => {
 							return e && e != '' && e.length > 0
 						})
@@ -178,8 +168,9 @@ let tabletoimage = async (msg) => {
 						return ['Error: Failed to parse xlsx file', err.message]
 					tabledata = [..._d]
 				})
+				break
 			case 'csv':
-				await csv.parse(
+				csv.parse(
 					await fsPromises.readFile(tmppath + '/' + sheet.name),
 					async (err, _d) => {
 						if (err)

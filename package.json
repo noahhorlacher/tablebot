@@ -1,6 +1,6 @@
 {
   "name": "tablebot",
-  "version": "1.6.0",
+  "version": "1.9.1",
   "description": "Discord bot that takes in some table (Google Sheet, Excel file, csv), puts it over a customizable background and returns the result.",
   "main": "index.js",
   "scripts": {

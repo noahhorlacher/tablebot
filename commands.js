@@ -130,8 +130,8 @@ const commands = {
 							.setColor('#ff0000')
 							.setTitle(err)
 							.setDescription(
-								img.length > 2048
-									? img.substring(0, 2044) + '...'
+								img.length > 500
+									? img.substring(0, 500) + '...'
 									: img
 							)
 						newmsg.edit(`<@${_msg.author.id}> I'm sorry`, newembed)

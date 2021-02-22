@@ -6,7 +6,7 @@
     "style": {
         "defaulttitle": false,
         "titlecolor": "#220000EE",
-        "quality": 30,
+        "quality": 60,
         "transparent": false,
         "logo": "./defaultbranding/logo.png",
         "bgimage":"./defaultbranding/background.jpg",
@@ -17,7 +17,9 @@
         "headerbgcolor": "#79000088",
         "bordercolor": "#ffffffbb",
         "borderwidth": 1,
-        "splitevery": -1
+        "splitevery": -1,
+        "specialheader": "VIP",
+        "highlightcolor": "#ffb53688"
     },
     "colors": {
         "msg": "#008080",

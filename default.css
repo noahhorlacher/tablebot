@@ -91,3 +91,7 @@ thead,
 td {
 	padding: 5px 26px;
 }
+
+tbody tr.special {
+	background-color: var(--spc);
+}

@@ -20,7 +20,7 @@ html(lang="en")
                             for hf in theader
                                 td=hf
                     tbody 
-                        for tr in t 
-                            tr
-                                for td in tr 
+                        for tr in t
+                            tr(class=(tr[0] ? 'special' : '' ))
+                                for td in tr[1] 
                                     td=td

@@ -36,9 +36,26 @@ let tabletohtml = async (data, options) => {
 		.replace('%bc', options.bordercolor)
 		.replace('%bw', options.borderwidth)
 		.replace('%tic', options.titlecolor)
+		.replace('%spc', defs.style.highlightcolor)
 
 	let thead = data.shift()
 	let tdata = []
+
+	let hasspc = false
+	let spcindex
+
+	// Has special keyword
+	if (
+		thead.some((e) => {
+			return e == defs.style.specialheader
+		})
+	) {
+		hasspc = true
+		spcindex = thead.indexOf(defs.style.specialheader)
+		thead = thead.filter((e) => {
+			return e != defs.style.specialheader
+		})
+	}
 
 	if (options.splitevery > parseInt(0)) {
 		let tempdat = [...data]
@@ -52,6 +69,19 @@ let tabletohtml = async (data, options) => {
 		tdata = [data]
 	}
 
+	console.log('highlighting')
+	for (let t = 0; t < tdata.length; t++) {
+		for (let r = 0; r < tdata[t].length; r++) {
+			if (hasspc && spcindex) {
+				let isspc = tdata[t][r][spcindex] == 'TRUE' ? true : false
+				tdata[t][r] = [isspc, tdata[t][r]]
+				tdata[t][r][1].splice(spcindex, 1)
+			} else {
+				tdata[t][r] = [false, tdata[t][r]]
+			}
+		}
+	}
+
 	let dateobj = new Date(Date.now())
 	let datestr = `${dateobj.getDate()}.${
 		dateobj.getMonth() + 1
@@ -62,6 +92,7 @@ let tabletohtml = async (data, options) => {
 		? options.title.replace('%date', datestr)
 		: false
 
+	// pugging
 	return pug.renderFile('./template.pug', {
 		theader: thead,
 		tdata: tdata,
@@ -202,8 +233,9 @@ let tabletoimage = async (msg) => {
 			)
 		}
 
-		let html = ''
+		console.log('Parsed file to js obj')
 
+		let html = ''
 		// Parse into html
 		try {
 			html = await tabletohtml(tabledata, {

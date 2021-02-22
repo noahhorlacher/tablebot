@@ -112,14 +112,18 @@ const commands = {
 				.send(`I'll @ you when I'm done.`, newembed)
 				.then(async (newmsg) => {
 					console.log('Generating')
-					let res = await tabletoimage(_msg).catch((e) => {
+					let res = await tabletoimage(_msg).catch((err) => {
 						console.log('Failed')
 						newembed
 							.setColor('#ff0000')
-							.setTitle(err)
-							.setDescription(img)
+							.setTitle('Error')
+							.setDescription(
+								err.length > 500
+									? err.substring(0, 500) + '...'
+									: err
+							)
 						newmsg.edit(`<@${_msg.author.id}> I'm sorry.`, newembed)
-						return false
+						return
 					})
 					let err, img, fname
 					;[err, img, fname] = [...res]

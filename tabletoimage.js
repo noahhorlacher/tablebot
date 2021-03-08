@@ -36,7 +36,7 @@ let tabletohtml = async (data, options) => {
 		.replace('%bc', options.bordercolor)
 		.replace('%bw', options.borderwidth)
 		.replace('%tic', options.titlecolor)
-		.replace('%spc', defs.style.highlightcolor)
+		.replace('%spc', options.specialcolor)
 
 	let thead = data.shift()
 	let tdata = []
@@ -120,7 +120,7 @@ let tabletoimage = async (msg) => {
 
 	// Parse args
 	let args = {
-		bgc: cc.match(/c=#[0-9a-f]{6}/gi) || false, // html background color
+		bgc: cc.match(/bgc=#[0-9a-f]{6}/gi) || false, // html background color
 		bgi:
 			cc.match(
 				/bgi=(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/gi
@@ -137,12 +137,13 @@ let tabletoimage = async (msg) => {
 		bw: cc.match(/bw=\d+/gi) || false, // border width
 		spl: cc.match(/spl=\d+/gi) || false, // split datarows into multiple tables
 		ti: cc.match(/ti='.*?'/gi) || false, // title
-		tic: cc.match(/tic=#[0-9a-f]{8}/gi) || false // title color
+		tic: cc.match(/tic=#[0-9a-f]{8}/gi) || false, // title color
+		spc: cc.match(/spc=#[0-9a-f]{8}/gi) || false // highlight color
 	}
 
 	let bg =
 		args.bgi[0]?.replace(/bgi=/i, '') ||
-		args.bgc[0]?.replace(/c=/i, '') ||
+		args.bgc[0]?.replace(/bgc=/i, '') ||
 		defs.style.bgimage == ''
 			? false
 			: defs.style.bgimage || defs.style.bgcolor
@@ -167,6 +168,8 @@ let tabletoimage = async (msg) => {
 		args.ti[0]?.replace(/ti='/i, '').replace(/'$/i, '') ||
 		defs.style.defaulttitle
 	let titlecolor = args.tic[0]?.replace(/tic=/i, '') || defs.style.titlecolor
+	let specialcolor =
+		args.spc[0]?.replace(/spc=/i, '') || defs.style.highlightcolor
 
 	let sheetext = sheet.name.split('.').pop() // Sheet file extension
 
@@ -251,7 +254,8 @@ let tabletoimage = async (msg) => {
 				borderwidth: borderwidth,
 				splitevery: splitevery,
 				title: title,
-				titlecolor: titlecolor
+				titlecolor: titlecolor,
+				specialcolor: specialcolor
 			})
 		} catch (e) {
 			console.log(e)

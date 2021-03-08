@@ -129,15 +129,11 @@ const commands = {
 					;[err, img, fname] = [...res]
 
 					if (err) {
-						console.log('Failed')
+						console.log('Failed: ', err)
 						newembed
 							.setColor('#ff0000')
 							.setTitle(err)
-							.setDescription(
-								img.length > 500
-									? img.substring(0, 500) + '...'
-									: img
-							)
+							.setDescription('I encountered some error.')
 						newmsg.edit(`<@${_msg.author.id}> I'm sorry`, newembed)
 						return false
 					} else {

@@ -92,6 +92,7 @@ let tabletohtml = async (data, options) => {
 		? options.title.replace('%date', datestr)
 		: false
 
+	console.log('pugging')
 	// pugging
 	return pug.renderFile('./template.pug', {
 		theader: thead,
@@ -253,6 +254,7 @@ let tabletoimage = async (msg) => {
 				titlecolor: titlecolor
 			})
 		} catch (e) {
+			console.log(e)
 			return [`Error: Couldn't convert table to html`, e]
 		}
 

@@ -266,7 +266,10 @@ let tabletoimage = async (msg) => {
 				quality: defs.style.quality,
 				transparent: defs.style.transparent,
 				type: 'png',
-				encoding: 'binary'
+				encoding: 'binary',
+				puppeteerArgs: {
+					args: ['--no-sandbox', '--disable-setuid-sandbox']
+				}
 			})
 		} catch (e) {
 			return [`Error: Couldn't convert html to image`, e]

@@ -129,7 +129,7 @@ const commands = {
 					;[err, img, fname] = [...res]
 
 					if (err) {
-						console.log('Failed: ', err)
+						console.log('Failed: ', err, img)
 						newembed
 							.setColor('#ff0000')
 							.setTitle(err)

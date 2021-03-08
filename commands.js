@@ -118,9 +118,9 @@ const commands = {
 							.setColor('#ff0000')
 							.setTitle('Error')
 							.setDescription(
-								err.length > 500
-									? err.substring(0, 500) + '...'
-									: err
+								err && err.toString().length > 500
+									? err.toString().substr(0, 100) + '...'
+									: err.toString()
 							)
 						newmsg.edit(`<@${_msg.author.id}> I'm sorry.`, newembed)
 						return

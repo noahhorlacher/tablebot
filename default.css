@@ -94,4 +94,5 @@ td {
 
 tbody tr.special {
 	background-color: var(--spc);
+	position: relative;
 }
